@@ -1,0 +1,10 @@
+(library
+ ((name ppx_deriving_hardcaml_test)
+  (libraries (base
+              expect_test_helpers_kernel
+              stdio))
+  (preprocess (pps (ppx_jane ppx_deriving_hardcaml ppxlib.runner)))))
+
+
+
+(jbuild_version 1)

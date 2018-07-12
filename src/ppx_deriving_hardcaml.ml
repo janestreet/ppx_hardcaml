@@ -532,8 +532,8 @@ let sig_of_type ({ ptype_loc = loc; _ } as type_decl) =
   | Ptype_record labels, [ ({ ptyp_desc = Ptyp_var(v); _ }, _) ] ->
     List.iter labels ~f:(check_label v);
     [[%sigi: include Ppx_deriving_hardcaml_runtime.Interface.S with type 'a t := 'a t]]
-| _, _ ->
-  raise_errorf ~loc "[%s] sig_of_type: only supports record types" deriver
+  | _, _ ->
+    raise_errorf ~loc "[%s] sig_of_type: only supports record types" deriver
 
 let () =
   let get_bool_option ~loc option name =

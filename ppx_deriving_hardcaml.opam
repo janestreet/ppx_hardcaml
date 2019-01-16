@@ -1,26 +1,25 @@
-opam-version: "1.2"
+opam-version: "2.0"
 maintainer: "opensource@janestreet.com"
 authors: ["Jane Street Group, LLC <opensource@janestreet.com>"]
 homepage: "https://github.com/janestreet/ppx_deriving_hardcaml"
 bug-reports: "https://github.com/janestreet/ppx_deriving_hardcaml/issues"
 dev-repo: "git+https://github.com/janestreet/ppx_deriving_hardcaml.git"
+doc: "https://ocaml.janestreet.com/ocaml-core/latest/doc/ppx_deriving_hardcaml/index.html"
 license: "MIT"
 build: [
-  ["jbuilder" "build" "-p" name "-j" jobs]
+  ["dune" "build" "-p" name "-j" jobs]
 ]
 depends: [
+  "ocaml" {>= "4.07.0"}
   "base"
   "hardcaml"
   "ppx_jane"
   "ppx_sexp_conv"
-  "jbuilder"                {build & >= "1.0+beta18.1"}
-  "ocaml-migrate-parsetree" {>= "1.0"}
-  "ppxlib"                  {>= "0.1.0"}
+  "dune"          {build & >= "1.5.1"}
+  "ppxlib"        {>= "0.4.0"}
 ]
-available: [ ocaml-version >= "4.06.1" ]
-descr: "
-Rewrite OCaml records for use as Hardcaml Interfaces.
-
+synopsis: "Rewrite OCaml records for use as Hardcaml Interfaces"
+description: "
 An interface in Hardcaml is an OCaml record with special attributes including
 a bit width and RTL netlist name.  Input and output ports of a hardware design
 can then be accessed through the OCaml record.  This allows easier management

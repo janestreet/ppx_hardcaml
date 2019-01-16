@@ -293,3 +293,105 @@ let%expect_test "extended" =
   print_s [%sexp (Extended.port_names : string Extended.t)];
   [%expect {| ((foo foo)) |}]
 ;;
+
+module Bar : sig
+  type 'a t =
+    { bar : 'a }
+  [@@deriving sexp_of, hardcaml ~ast]
+end = struct
+  type 'a t =
+    { bar : 'a
+    (** bar documentation *)
+    }
+  [@@deriving sexp_of, hardcaml ~ast]
+end
+
+module Foo : Hardcaml.Interface.S_with_ast = struct
+  type 'a t =
+    { foo : 'a
+    (** foo documentation *)
+    ; bar : 'a Bar.t
+    ; lst : 'a list[@length 7]
+    ; arr : 'a array[@length 0]
+    ; lstm : 'a Bar.t list[@length 7]
+    (** lstm documentation *)
+    ; arrm : 'a Bar.t array[@length 0]
+    }
+  [@@deriving sexp_of, hardcaml ~ast]
+end
+
+let%expect_test "ast" =
+  print_s [%sexp (Foo.ast : Hardcaml.Interface.Ast.t)];
+  [%expect {|
+    (((name foo)
+      (type_ (
+        Signal
+        (bits    1)
+        (rtlname foo)))
+      (sequence ())
+      (doc (" foo documentation ")))
+     ((name bar)
+      (type_ (
+        Module
+        (name Bar)
+        (ast ((
+          (name bar)
+          (type_ (
+            Signal
+            (bits    1)
+            (rtlname bar)))
+          (sequence ())
+          (doc (" bar documentation ")))))))
+      (sequence ())
+      (doc      ()))
+     ((name lst)
+      (type_ (
+        Signal
+        (bits    1)
+        (rtlname lst)))
+      (sequence ((
+        (kind   List)
+        (length 7))))
+      (doc ()))
+     ((name arr)
+      (type_ (
+        Signal
+        (bits    1)
+        (rtlname arr)))
+      (sequence ((
+        (kind   Array)
+        (length 0))))
+      (doc ()))
+     ((name lstm)
+      (type_ (
+        Module
+        (name Bar)
+        (ast ((
+          (name bar)
+          (type_ (
+            Signal
+            (bits    1)
+            (rtlname bar)))
+          (sequence ())
+          (doc (" bar documentation ")))))))
+      (sequence ((
+        (kind   List)
+        (length 7))))
+      (doc (" lstm documentation ")))
+     ((name arrm)
+      (type_ (
+        Module
+        (name Bar)
+        (ast ((
+          (name bar)
+          (type_ (
+            Signal
+            (bits    1)
+            (rtlname bar)))
+          (sequence ())
+          (doc (" bar documentation ")))))))
+      (sequence ((
+        (kind   Array)
+        (length 0))))
+      (doc ())))|}]
+;;

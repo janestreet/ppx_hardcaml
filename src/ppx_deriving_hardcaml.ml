@@ -13,6 +13,7 @@ type options_t = {
   rtlprefix : expression option;
   rtlsuffix : expression option;
   rtlmangle : bool;
+  ast : bool;
 }
 
 let parse_bool option expr ~loc =
@@ -37,6 +38,7 @@ module Attribute : sig
   val rtlname   : t
   val rtlprefix : t
   val rtlsuffix : t
+  val doc       : t
 end = struct
 
   type t = (label_declaration, expression) Attribute.t
@@ -56,6 +58,10 @@ end = struct
   let rtlname   = create "rtlname"
   let rtlprefix = create "rtlprefix"
   let rtlsuffix = create "rtlsuffix"
+  (* This represents the [ocaml.doc] attribute, which maps to documentation comments. The
+     leading [hardcaml.] token is required to bypass some compiler (or ppx) related
+     checks. I mention it because it's an undocumented hack. *)
+  let doc       = create "hardcaml.ocaml.doc"
 end
 
 let get_bits ~loc label_declaration =
@@ -68,10 +74,14 @@ let get_length ~loc label_declaration =
   | Some (expr) -> expr
   | None -> raise_errorf ~loc "[%s] length attribute must be set" deriver
 
+
+let field_name ~loc txt =
+  pexp_constant ~loc (Pconst_string (txt, None))
+
 let get_rtlname ~loc txt label_declaration =
   match Attribute.(find rtlname) label_declaration with
   | Some (expr) -> expr
-  | None -> pexp_constant ~loc (Pconst_string (txt, None))
+  | None -> field_name ~loc txt
 
 let get_rtlprefix ~loc:_ opts label_declaration =
   match Attribute.(find rtlprefix) label_declaration with
@@ -89,6 +99,14 @@ let get_rtlmangle ~loc opts label_declaration =
   | Some ([%expr false]) -> false
   | Some (_) -> raise_errorf ~loc "[%s] rtlmangle attribute must be a boolean" deriver
   | None -> opts.rtlmangle
+
+let get_doc ~loc label_declaration =
+  match Attribute.(find doc) label_declaration with
+  | Some (expr) -> (
+      match expr.pexp_desc with
+      | Pexp_constant (Pconst_string(str, _)) -> Some str
+      | _ -> raise_errorf ~loc "[%s] doc atttribute must be a string" deriver)
+  | None -> None
 
 (*
  * Identifier manipulation
@@ -317,7 +335,7 @@ let expand_map_label iter_or_map var
       when String.equal v var ->
       let mapid =
         pexp_ident ~loc (Located.mk ~loc (Ldot (mname, Iter_or_map.name iter_or_map))) in
-      [%expr [%e mapid] ~f [%e ident]]
+      [%expr [%e mapid] [%e ident] ~f]
     (* 'a list, 'a Module.t list *)
     | Ptyp_constr ({ txt = Lident("list"); _ }, [ { ptyp_desc; _ } ]) ->
       expand_map_label_list iter_or_map var loc ident ptyp_desc
@@ -339,7 +357,7 @@ let expand_map_label iter_or_map var
 let expand_map2_label_list iter_or_map var loc ident0 ident1 = function
   (* 'a *)
   | Ptyp_var(v) when String.equal v var ->
-    [%expr [%e Iter_or_map.list_map2_exn iter_or_map loc] ~f [%e ident0] [%e ident1]]
+    [%expr [%e Iter_or_map.list_map2_exn iter_or_map loc] [%e ident0] [%e ident1] ~f]
   (* 'a Module.t *)
   | Ptyp_constr ({ txt = Ldot(mname, _); _ }, [ { ptyp_desc = Ptyp_var(v); _ } ])
     when String.equal v var ->
@@ -347,7 +365,7 @@ let expand_map2_label_list iter_or_map var loc ident0 ident1 = function
       pexp_ident ~loc (Located.mk ~loc (Ldot (mname, Iter_or_map.name2 iter_or_map))) in
     [%expr
       [%e Iter_or_map.list_map2_exn iter_or_map loc] [%e ident0] [%e ident1]
-        ~f:(fun _e0 _e1 -> [%e mapid] ~f _e0 _e1)]
+        ~f:(fun _e0 _e1 -> [%e mapid] _e0 _e1 ~f)]
   (* Default *)
   | _ ->
     raise_errorf ~loc
@@ -368,9 +386,10 @@ let expand_map2_label_array iter_or_map var loc ident0 ident1 = function
       pexp_ident ~loc (Located.mk ~loc (Ldot (mname, Iter_or_map.name2 iter_or_map))) in
     [%expr
       [%e Iter_or_map.array_init iter_or_map loc] (Array.length [%e ident0]) ~f:(fun _i ->
-        [%e mapid] ~f
+        [%e mapid]
           (Ppx_deriving_hardcaml_runtime.Array.get [%e ident0] _i)
-          (Ppx_deriving_hardcaml_runtime.Array.get [%e ident1] _i))]
+          (Ppx_deriving_hardcaml_runtime.Array.get [%e ident1] _i)
+          ~f)]
   (* Default *)
   | _ ->
     raise_errorf ~loc
@@ -392,7 +411,7 @@ let expand_map2_label iter_or_map var
       when String.equal v var ->
       let mapid =
         pexp_ident ~loc (Located.mk ~loc (Ldot (mname, Iter_or_map.name2 iter_or_map))) in
-      [%expr [%e mapid] ~f [%e ident0] [%e ident1]]
+      [%expr [%e mapid] [%e ident0] [%e ident1] ~f]
     (* 'a list, 'a Module.t list *)
     | Ptyp_constr ({ txt = Lident("list"); _ }, [ { ptyp_desc; _ } ])  ->
       expand_map2_label_list iter_or_map var loc ident0 ident1 ptyp_desc
@@ -457,7 +476,7 @@ let expand_to_list_label var ({ pld_name = { txt; loc; _ }; _ } as label) =
       "[%s] expand_to_list_label: only supports abstract record labels"
       deriver
 
-let build_to_list_args labels =
+let build_expr_list labels =
   let loc = Location.none in
   List.fold_right
     labels
@@ -465,6 +484,90 @@ let build_to_list_args labels =
                           (Located.mk ~loc (Lident "::"))
                           (Some (pexp_tuple ~loc [ expr; acc ])))
     ~init:(pexp_construct ~loc (Located.mk ~loc (Lident "[]")) None)
+
+(*
+ * Expand ast label
+*)
+
+let expand_ast_label opts var
+      ({ pld_name = { txt; loc; _ }; pld_type; _ } as label_declaration) =
+  let expand_expr ptyp_desc =
+    let rtlname   = get_rtlname   ~loc txt  label_declaration
+    and rtlprefix = get_rtlprefix ~loc opts label_declaration
+    and rtlsuffix = get_rtlsuffix ~loc opts label_declaration
+    (* and rtlmangle = get_rtlmangle ~loc opts label_declaration *)
+    in
+    let signal () =
+      let rtlident = mk_rtlident ~loc rtlname rtlprefix rtlsuffix in
+      let bits = get_bits ~loc label_declaration in
+      [%expr Signal { bits = [%e bits]
+                    ; rtlname = [%e rtlident] }]
+    in
+    let module_ mname =
+      let ast = pexp_ident ~loc (Located.mk ~loc (Ldot (mname, "ast"))) in
+      let mname =
+        let mname = Longident.flatten_exn mname |> String.concat ~sep:"." in
+        pexp_constant ~loc (Pconst_string(mname, None)) in
+      [%expr Module { name = [%e mname]
+                    ; ast = [%e ast] }]
+    in
+    let sequence kind =
+      let length = get_length ~loc label_declaration in
+      [%expr Some { kind = [%e kind]
+                  ; length = [%e length] } ]
+    in
+    let type_, sequence =
+      match ptyp_desc with
+      (* 'a *)
+      | Ptyp_var v when String.equal v var ->
+        signal (), [%expr None]
+
+      (* 'a Module.t *)
+      | Ptyp_constr ({ txt = Ldot(mname, _); _ },
+                     [ { ptyp_desc = Ptyp_var(v); _ } ]) when String.equal v var ->
+        module_ mname, [%expr None]
+
+      (* 'a list *)
+      | Ptyp_constr ({ txt = Lident("list"); _ }, [ { ptyp_desc = Ptyp_var(v); _ } ])
+        when String.equal v var ->
+        signal (), sequence [%expr List]
+
+      (* 'a Module.t list *)
+      | Ptyp_constr ({ txt = Lident("list"); _ }
+                    , [ { ptyp_desc = Ptyp_constr ({ txt = Ldot(mname, _); _ }
+                                                  , [ { ptyp_desc = Ptyp_var(v); _ } ]); _ }])
+        when String.equal v var ->
+        module_ mname, sequence [%expr List]
+
+      (* 'a array *)
+      | Ptyp_constr ({ txt = Lident("array"); _ }, [ { ptyp_desc = Ptyp_var(v); _ } ])
+        when String.equal v var ->
+        signal (), sequence [%expr Array]
+
+      (* 'a Module.t array *)
+      | Ptyp_constr ({ txt = Lident("array"); _ }
+                    , [ { ptyp_desc = Ptyp_constr ({ txt = Ldot(mname, _); _ }
+                                                  , [ { ptyp_desc = Ptyp_var(v); _ } ]); _ }])
+        when String.equal v var ->
+        module_ mname, sequence [%expr Array]
+
+      (* Default *)
+      | _ ->
+        raise_errorf ~loc "[%s] expand_doc_label: only supports abstract record labels" deriver
+    in
+    let field_name = field_name ~loc txt in
+    let doc =
+      match get_doc ~loc label_declaration with
+      | None -> [%expr None]
+      | Some doc -> [%expr Some [%e pexp_constant ~loc (Pconst_string(doc, None))]]
+    in
+    [%expr { Ppx_deriving_hardcaml_runtime.Interface.Ast.Field.
+             name = [%e field_name]
+           ; type_ = [%e type_]
+           ; sequence = [%e sequence]
+           ; doc = [%e doc]}]
+  in
+  expand_expr pld_type.ptyp_desc
 
 (*
  * PPX deriving
@@ -499,21 +602,26 @@ let str_of_type ~options ({ ptype_loc = loc; _ } as type_decl) =
     let str_t              = pexp_record ~loc str_t_labels None in
     let str_map iter_or_map =
       let fields = List.map labels ~f:(expand_map_label iter_or_map var) in
-      [%expr fun ~f x -> [%e record_fields iter_or_map ~loc fields]] in
+      [%expr fun x ~f -> [%e record_fields iter_or_map ~loc fields]] in
     let str_map2 iter_or_map =
       let fields = List.map labels ~f:(expand_map2_label iter_or_map var) in
-      [%expr fun ~f x0 x1 -> [%e record_fields iter_or_map ~loc fields]] in
+      [%expr fun x0 x1 ~f -> [%e record_fields iter_or_map ~loc fields]] in
     let str_to_list_labels = List.map labels ~f:(expand_to_list_label var) in
-    let str_to_list_args   = build_to_list_args str_to_list_labels in
+    let str_to_list_args   = build_expr_list str_to_list_labels in
     let str_to_list        =
       [%expr fun x -> Ppx_deriving_hardcaml_runtime.List.concat [%e str_to_list_args]] in
+    let str_ast_labels () = List.map labels ~f:(expand_ast_label options var) in
+    let str_ast () = build_expr_list (str_ast_labels ()) in
     [ pstr_value ~loc Nonrecursive
-        [ value_binding ~loc ~pat:(pvar ~loc "t")       ~expr:str_t
-        ; value_binding ~loc ~pat:(pvar ~loc "iter")    ~expr:(str_map Iter)
-        ; value_binding ~loc ~pat:(pvar ~loc "iter2")   ~expr:(str_map2 Iter)
-        ; value_binding ~loc ~pat:(pvar ~loc "map")     ~expr:(str_map Map)
-        ; value_binding ~loc ~pat:(pvar ~loc "map2")    ~expr:(str_map2 Map)
-        ; value_binding ~loc ~pat:(pvar ~loc "to_list") ~expr:str_to_list ]
+        ([ value_binding ~loc ~pat:(pvar ~loc "t")       ~expr:str_t
+         ; value_binding ~loc ~pat:(pvar ~loc "iter")    ~expr:(str_map Iter)
+         ; value_binding ~loc ~pat:(pvar ~loc "iter2")   ~expr:(str_map2 Iter)
+         ; value_binding ~loc ~pat:(pvar ~loc "map")     ~expr:(str_map Map)
+         ; value_binding ~loc ~pat:(pvar ~loc "map2")    ~expr:(str_map2 Map)
+         ; value_binding ~loc ~pat:(pvar ~loc "to_list") ~expr:str_to_list ]
+         @ if options.ast
+         then [ value_binding ~loc ~pat:(pvar ~loc "ast") ~expr:(str_ast ())]
+         else [ ])
     ; [%stri include Ppx_deriving_hardcaml_runtime.Interface.Make (struct
         type nonrec 'a t = 'a t
         let sexp_of_t = sexp_of_t
@@ -527,11 +635,16 @@ let str_of_type ~options ({ ptype_loc = loc; _ } as type_decl) =
   | _ ->
     raise_errorf ~loc "[%s] str_of_type: only supports record types" deriver
 
-let sig_of_type ({ ptype_loc = loc; _ } as type_decl) =
+let sig_of_type ~ast ({ ptype_loc = loc; _ } as type_decl) =
   match type_decl.ptype_kind, type_decl.ptype_params with
   | Ptype_record labels, [ ({ ptyp_desc = Ptyp_var(v); _ }, _) ] ->
     List.iter labels ~f:(check_label v);
-    [[%sigi: include Ppx_deriving_hardcaml_runtime.Interface.S with type 'a t := 'a t]]
+    let intf =
+      [%sigi: include Ppx_deriving_hardcaml_runtime.Interface.S with type 'a t := 'a t]
+    in
+    if ast
+    then [intf; [%sigi: val ast : Ppx_deriving_hardcaml_runtime.Interface.Ast.t]]
+    else [intf]
   | _, _ ->
     raise_errorf ~loc "[%s] sig_of_type: only supports record types" deriver
 
@@ -548,19 +661,24 @@ let () =
           empty
           +> arg "rtlprefix" Ast_pattern.__
           +> arg "rtlsuffix" Ast_pattern.__
-          +> arg "rtlmangle" Ast_pattern.__)
+          +> arg "rtlmangle" Ast_pattern.__
+          +> flag "ast")
         (fun ~loc ~path:_ (_, type_declarations)
-          rtlprefix rtlsuffix rtlmangle ->
+          rtlprefix rtlsuffix rtlmangle ast ->
           let options =
             { rtlprefix
             ; rtlsuffix
-            ; rtlmangle = get_bool_option ~loc rtlmangle "rtlmangle" } in
+            ; rtlmangle = get_bool_option ~loc rtlmangle "rtlmangle"
+            ; ast } in
           List.concat_map type_declarations
             ~f:(fun decl -> str_of_type ~options decl)))
     ~sig_type_decl:(
-      Deriving.Generator.make_noarg
+      Deriving.Generator.make
+        Deriving.Args.(
+          empty
+          +> flag "ast")
         ~deps:[ Ppx_sexp_conv.sexp_of ]
-        (fun ~loc:_ ~path:_ (_, type_declarations) ->
-           List.concat_map type_declarations ~f:sig_of_type))
+        (fun ~loc:_ ~path:_ (_, type_declarations) ast ->
+           List.concat_map type_declarations ~f:(sig_of_type ~ast)))
   |> Deriving.ignore
 ;;

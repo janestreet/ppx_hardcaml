@@ -1,6 +1,6 @@
 include (Base
          : (module type of struct include Base end
-             with module Printf := Base.Printf))
+           with module Printf := Base.Printf))
 
 include Stdio
 

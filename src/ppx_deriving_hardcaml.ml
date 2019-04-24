@@ -121,7 +121,7 @@ let mk_rtlident ~loc name prefix suffix =
     [%expr Ppx_deriving_hardcaml_runtime.concat [ [%e name]; [%e suf] ]]
   | Some (pre), Some (suf) ->
     [%expr Ppx_deriving_hardcaml_runtime.concat [ [%e pre]; [%e name]; [%e suf] ]]
-      [@metaloc loc]
+    [@metaloc loc]
 
 let mangle_name ~loc name mangle =
   if mangle

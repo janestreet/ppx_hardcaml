@@ -4,6 +4,6 @@ include (Base
 
 include Stdio
 
-include Expect_test_helpers_kernel
+include Expect_test_helpers_core
 
 let string_of_int = Caml.string_of_int

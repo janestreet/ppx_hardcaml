@@ -1,4 +1,5 @@
-# `ppx_deriving` Plugin for Hardcaml
+ppx_deriving Plugin for Hardcaml
+================================
 
 This ppx supports grouping collections of signals using OCaml records. It
 generates a set of functions that can be used to process the fields of the

@@ -6,4 +6,4 @@ include Stdio
 
 include Expect_test_helpers_core
 
-let string_of_int = Caml.string_of_int
+let string_of_int = Stdlib.string_of_int

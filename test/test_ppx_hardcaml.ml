@@ -15,7 +15,7 @@ module Simple = struct
       a 1 |} ]
 end
 
-module Set_bits = struct
+module _ = struct
   type 'a t =
     { a : 'a [@bits 12]
     ; b : 'a [@bits 0] }
@@ -76,7 +76,7 @@ module Rtlname = struct
       WORLD 1 |} ]
 end
 
-module Nesting = struct
+module _ = struct
   type 'a t =
     { a : 'a [@bits 2]
     ; b : 'a Simple.t
@@ -91,7 +91,7 @@ module Nesting = struct
       WORLD 1 |} ]
 end
 
-module Rtlprefix = struct
+module _ = struct
   type 'a t =
     { world : 'a          [@rtlprefix "hello_"]
     ; foo   : 'a          [@rtlprefix "hello_"] [@rtlname "WORLD"]
@@ -108,7 +108,7 @@ module Rtlprefix = struct
       i_y_a 1|} ]
 end
 
-module Rtlsuffix = struct
+module _ = struct
   type 'a t =
     { hello : 'a                              [@rtlsuffix "_world"]
     ; foo   : 'a          [@rtlname "hello_"] [@rtlsuffix "WORLD"]
@@ -125,7 +125,7 @@ module Rtlsuffix = struct
       y_a_o 1 |} ]
 end
 
-module Arrays = struct
+module _ = struct
   type 'a t =
     { x : 'a array [@length 1]
     ; y : 'a array [@length 3] [@bits 5]
@@ -143,7 +143,7 @@ module Arrays = struct
       Z1 1 |} ]
 end
 
-module Array_with_module = struct
+module _ = struct
   module M = struct
     type 'a t =
       { foo : 'a }
@@ -161,7 +161,7 @@ module Array_with_module = struct
   ;;
 end
 
-module Lists = struct
+module _ = struct
   type 'a t =
     { x : 'a list [@length 1]
     ; y : 'a list [@length 3] [@bits 5]
@@ -179,7 +179,7 @@ module Lists = struct
       Z1 1 |} ]
 end
 
-module List_with_module = struct
+module _ = struct
   module M = struct
     type 'a t =
       { foo : 'a }
@@ -197,7 +197,7 @@ module List_with_module = struct
   ;;
 end
 
-module Rtlprefix_option = struct
+module _ = struct
   type 'a t =
     { a : 'a [@rtlprefix "X"]
     ; b : 'a }
@@ -210,7 +210,7 @@ module Rtlprefix_option = struct
       i_b 1 |} ]
 end
 
-module Rtlsuffix_option = struct
+module _ = struct
   type 'a t =
     { a : 'a [@rtlsuffix "X"]
     ; b : 'a }
@@ -223,7 +223,7 @@ module Rtlsuffix_option = struct
       b_o 1 |} ]
 end
 
-module Rtlmangle_option = struct
+module _ = struct
   type 'a t =
     { a : 'a [@bits 2]
     ; b : 'a Simple.t
@@ -238,7 +238,7 @@ module Rtlmangle_option = struct
       c_WORLD 1 |} ]
 end
 
-module Options = struct
+module _ = struct
   module N = struct type 'a t = { n : 'a}[@@deriving sexp_of, hardcaml] end
 
   type 'a t =

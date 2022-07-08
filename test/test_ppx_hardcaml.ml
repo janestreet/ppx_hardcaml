@@ -395,3 +395,31 @@ let%expect_test "ast" =
         (length 0))))
       (doc ())))|}]
 ;;
+
+(* This type signatures below demonstrates the PPX is more relaxed in mlis. Namely, even
+   though the PPX cannot generate definitions for the below record fields, they are
+   still allowed in the mli.
+*)
+module type Allow_nested_in_sig = sig
+  type 'a t =
+    { double_nested_field_type : 'a Bar.t Bar.t
+    ; inline_functor_application : 'a Map.M(Int).t
+    }
+  [@@deriving sexp_of, hardcaml]
+end
+
+module Rtlmangle_with_seperator = struct
+  type 'a t =
+    { the_bar_field : 'a Bar.t [@rtlmangle "$"]
+    ; the_simple_field : 'a Simple.t
+    }
+  [@@deriving sexp_of, hardcaml ~rtlmangle:"___"]
+end
+
+let%expect_test "rtlmangle with a non default seperator" =
+  print_s ([%sexp_of: string Rtlmangle_with_seperator.t]
+             Rtlmangle_with_seperator.port_names);
+  [%expect {|
+    ((the_bar_field    ((bar the_bar_field$bar)))
+     (the_simple_field ((a   the_simple_field___a)))) |}]
+;;

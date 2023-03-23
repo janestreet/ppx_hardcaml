@@ -10,7 +10,7 @@ module Simple = struct
   [@@deriving sexp_of, hardcaml]
 
   let%expect_test "simple" =
-    print_t_list (to_list t);
+    print_t_list (to_list port_names_and_widths);
     [%expect {|
       a 1 |} ]
 end
@@ -22,44 +22,44 @@ module _ = struct
   [@@deriving sexp_of, hardcaml]
 
   let%expect_test "set bits" =
-    print_t_list (to_list t);
+    print_t_list (to_list port_names_and_widths);
     [%expect {|
       a 12
       b 0 |} ]
 
   let%expect_test "iter" =
-    iter ~f:(fun si -> print_s [%sexp (si : string * int)]) t;
+    iter ~f:(fun si -> print_s [%sexp (si : string * int)]) port_names_and_widths;
     [%expect {|
       (a 12)
       (b 0) |} ]
 
   let%expect_test "iter2" =
-    iter2 ~f:(fun si i -> print_s [%sexp ((si, i) : (string * int) * int)]) t { a=5; b=3 };
+    iter2 ~f:(fun si i -> print_s [%sexp ((si, i) : (string * int) * int)]) port_names_and_widths { a=5; b=3 };
     [%expect {|
       ((a 12) 5)
       ((b 0) 3) |} ]
 
   let%expect_test "map" =
-    print_t_list (to_list @@ map ~f:(fun (n,b) -> n,b+1) t);
+    print_t_list (to_list @@ map ~f:(fun (n,b) -> n,b+1) port_names_and_widths);
     [%expect {|
       a 13
       b 1 |} ]
 
   let%expect_test "map2" =
-    print_t_list (to_list @@ map2 ~f:(fun (n,b) c -> n,b+c) t { a=5; b=3 });
+    print_t_list (to_list @@ map2 ~f:(fun (n,b) c -> n,b+c) port_names_and_widths { a=5; b=3 });
     [%expect {|
       a 17
       b 3 |} ]
 
   let%expect_test "[map] order" =
-    ignore (map ~f:(fun si -> print_s [%sexp (si : string * int)]) t);
+    ignore (map ~f:(fun si -> print_s [%sexp (si : string * int)]) port_names_and_widths);
     [%expect {|
       (a 12)
       (b 0) |} ]
 
   let%expect_test "[map2] order" =
     ignore (map2 ~f:(fun si i -> print_s [%sexp ((si, i) : (string * int) * int)])
-              t { a=5; b=3 });
+              port_names_and_widths { a=5; b=3 });
     [%expect {|
       ((a 12) 5)
       ((b 0) 3) |} ]
@@ -71,7 +71,7 @@ module Rtlname = struct
   [@@deriving sexp_of, hardcaml]
 
   let%expect_test "rtlname" =
-    print_t_list (to_list t);
+    print_t_list (to_list port_names_and_widths);
     [%expect {|
       WORLD 1 |} ]
 end
@@ -84,7 +84,7 @@ module _ = struct
   [@@deriving sexp_of, hardcaml]
 
   let%expect_test "Nesting" =
-    print_t_list (to_list t);
+    print_t_list (to_list port_names_and_widths);
     [%expect {|
       a 2
       a 1
@@ -100,7 +100,7 @@ module _ = struct
   [@@deriving sexp_of, hardcaml]
 
   let%expect_test "rtlprefix" =
-    print_t_list (to_list t);
+    print_t_list (to_list port_names_and_widths);
     [%expect {|
       hello_world 1
       hello_WORLD 1
@@ -117,7 +117,7 @@ module _ = struct
   [@@deriving sexp_of, hardcaml]
 
   let%expect_test "rtlsuffix" =
-    print_t_list (to_list t);
+    print_t_list (to_list port_names_and_widths);
     [%expect {|
       hello_world 1
       hello_WORLD 1
@@ -133,7 +133,7 @@ module _ = struct
   [@@deriving sexp_of, hardcaml]
 
   let%expect_test "arrays" =
-    print_t_list (to_list t);
+    print_t_list (to_list port_names_and_widths);
     [%expect {|
       x0 1
       y0 5
@@ -155,7 +155,7 @@ module _ = struct
   [@@deriving sexp_of, hardcaml]
 
   let%expect_test _ =
-    print_t_list (to_list t);
+    print_t_list (to_list port_names_and_widths);
     [%expect {|
       foo0 1 |}];
   ;;
@@ -169,7 +169,7 @@ module _ = struct
   [@@deriving sexp_of, hardcaml]
 
   let%expect_test "lists" =
-    print_t_list (to_list t);
+    print_t_list (to_list port_names_and_widths);
     [%expect {|
       x0 1
       y0 5
@@ -191,7 +191,7 @@ module _ = struct
   [@@deriving sexp_of, hardcaml]
 
   let%expect_test _ =
-    print_t_list (to_list t);
+    print_t_list (to_list port_names_and_widths);
     [%expect {|
       foo0 1 |}];
   ;;
@@ -204,7 +204,7 @@ module _ = struct
   [@@deriving sexp_of, hardcaml ~rtlprefix:"i_"]
 
   let%expect_test "rtlprefix_option" =
-    print_t_list (to_list t);
+    print_t_list (to_list port_names_and_widths);
     [%expect {|
       Xa 1
       i_b 1 |} ]
@@ -217,7 +217,7 @@ module _ = struct
   [@@deriving sexp_of, hardcaml ~rtlsuffix:"_o"]
 
   let%expect_test "rtlsuffix_option" =
-    print_t_list (to_list t);
+    print_t_list (to_list port_names_and_widths);
     [%expect {|
       aX 1
       b_o 1 |} ]
@@ -231,7 +231,7 @@ module _ = struct
   [@@deriving sexp_of, hardcaml ~rtlmangle:true]
 
   let%expect_test "rtlmangle option" =
-    print_t_list (to_list t);
+    print_t_list (to_list port_names_and_widths);
     [%expect {|
       a 2
       b_a 1
@@ -261,7 +261,7 @@ module _ = struct
       ~rtlprefix:"p"
       ~rtlsuffix:"s"]
   let%expect_test "options and overrides" =
-    print_t_list (to_list t);
+    print_t_list (to_list port_names_and_widths);
     [%expect {|
       PNS 1
       PbS 1

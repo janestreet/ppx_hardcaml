@@ -22,12 +22,12 @@ type 'a t =
 ## Example
 
 ```ocaml
-module S : sig
+module S = struct
   type 'a t =
-    { signal        : 'a[@bits 6]
-    ; signal_list   : 'a list[@length 2]
-    ; signal_array  : 'a array[@bits 3][@bits 7]
-    ; sub_interface : 'a T.t[@rtlmangle] (* where [T.t] also derives hardcaml *)
+    { signal : 'a [@bits 6]
+    ; signal_list : 'a list [@length 2]
+    ; signal_array : 'a array [@length 3] [@bits 7]
+    ; sub_interface : 'a T.t [@rtlmangle true] (* where [T.t] also derives hardcaml *)
     }
   [@@deriving sexp_of, hardcaml]
 end
@@ -44,13 +44,13 @@ have this type. The ppx only generates related functions and values.
 Simple fields take an optional bit width specification.
 
 ```ocaml
-foo : 'a[@bits 8]
+foo : 'a [@bits 8]
 ```
 
 These specifications do not have to be constants.
 
 ```ocaml
-foo : 'a[@bits (n+1)]
+foo : 'a [@bits n + 1]
 ```
 
 If not provided, a default bit width of 1 inferred.
@@ -60,7 +60,7 @@ If not provided, a default bit width of 1 inferred.
 When specifying list and array fields, a length _must_ be provided.
 
 ```ocaml
-foo : 'a array[@length 6]'
+foo : 'a array [@length 6]
 ```
 
 ## Naming
@@ -73,21 +73,21 @@ available to rename fields.
 ### Naming field attributes
 
 ```
-foo : 'a[@rtlname "bar"]
+foo : 'a [@rtlname "bar"]
 ```
 
 The field `foo` will be called `bar` in the RTL.
 
 ```ocaml
-foo : 'a[@rtlprefix "bar_"]
-foo : 'a[@rtlsuffix "_bar"]
+foo : 'a [@rtlprefix "bar_"]
+foo : 'a [@rtlsuffix "_bar"]
 ```
 
 The field name will be combined with the pre/suffix to produce `bar_foo` or `foo_bar`
 
 ```ocaml
-foo : 'a Foo.t[@rtlprefix "foo_"]
-foo : 'a Foo.t[@rtlmangle]
+foo : 'a Foo.t [@rtlprefix "foo_"]
+foo : 'a Foo.t [@rtlmangle true]
 ```
 
 Each field in [Foo.t] will be prefixed with `foo_`. The `rtlmangle` attribute does this

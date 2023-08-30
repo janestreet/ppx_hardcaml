@@ -6,11 +6,12 @@ module Array = struct
   let for_ length ~f =
     for i = 0 to length - 1 do
       f i
-    done;
+    done
   ;;
 end
-module Int       = Int
+
+module Int = Int
 module Interface = Hardcaml.Interface
-module List      = List
+module List = List
 
 let concat = String.concat

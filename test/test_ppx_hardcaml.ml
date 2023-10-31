@@ -6,7 +6,7 @@ let print_t_list t =
 ;;
 
 module Simple = struct
-  type 'a t = { a : 'a } [@@deriving sexp_of, hardcaml]
+  type 'a t = { a : 'a } [@@deriving hardcaml]
 
   let%expect_test "simple" =
     print_t_list (to_list port_names_and_widths);
@@ -20,7 +20,7 @@ module _ = struct
     { a : 'a [@bits 12]
     ; b : 'a [@bits 0]
     }
-  [@@deriving sexp_of, hardcaml]
+  [@@deriving hardcaml]
 
   let%expect_test "set bits" =
     print_t_list (to_list port_names_and_widths);
@@ -82,7 +82,7 @@ module _ = struct
 end
 
 module Rtlname = struct
-  type 'a t = { hello : 'a [@rtlname "WORLD"] } [@@deriving sexp_of, hardcaml]
+  type 'a t = { hello : 'a [@rtlname "WORLD"] } [@@deriving hardcaml]
 
   let%expect_test "rtlname" =
     print_t_list (to_list port_names_and_widths);
@@ -97,7 +97,7 @@ module _ = struct
     ; b : 'a Simple.t
     ; c : 'a Rtlname.t
     }
-  [@@deriving sexp_of, hardcaml]
+  [@@deriving hardcaml]
 
   let%expect_test "Nesting" =
     print_t_list (to_list port_names_and_widths);
@@ -115,7 +115,7 @@ module _ = struct
     ; x : 'a Simple.t [@rtlprefix "i_"]
     ; y : 'a Simple.t [@rtlprefix "i_"] [@rtlmangle true]
     }
-  [@@deriving sexp_of, hardcaml]
+  [@@deriving hardcaml]
 
   let%expect_test "rtlprefix" =
     print_t_list (to_list port_names_and_widths);
@@ -134,7 +134,7 @@ module _ = struct
     ; x : 'a Simple.t [@rtlsuffix "_o"]
     ; y : 'a Simple.t [@rtlsuffix "_o"] [@rtlmangle true]
     }
-  [@@deriving sexp_of, hardcaml]
+  [@@deriving hardcaml]
 
   let%expect_test "rtlsuffix" =
     print_t_list (to_list port_names_and_widths);
@@ -152,7 +152,7 @@ module _ = struct
     ; y : 'a array [@length 3] [@bits 5]
     ; z : 'a array [@length 2] [@rtlname "Z"]
     }
-  [@@deriving sexp_of, hardcaml]
+  [@@deriving hardcaml]
 
   let%expect_test "arrays" =
     print_t_list (to_list port_names_and_widths);
@@ -168,10 +168,10 @@ end
 
 module _ = struct
   module M = struct
-    type 'a t = { foo : 'a } [@@deriving sexp_of, hardcaml]
+    type 'a t = { foo : 'a } [@@deriving hardcaml]
   end
 
-  type 'a t = { x : 'a M.t array [@length 1] } [@@deriving sexp_of, hardcaml]
+  type 'a t = { x : 'a M.t array [@length 1] } [@@deriving hardcaml]
 
   let%expect_test _ =
     print_t_list (to_list port_names_and_widths);
@@ -186,7 +186,7 @@ module _ = struct
     ; y : 'a list [@length 3] [@bits 5]
     ; z : 'a list [@length 2] [@rtlname "Z"]
     }
-  [@@deriving sexp_of, hardcaml]
+  [@@deriving hardcaml]
 
   let%expect_test "lists" =
     print_t_list (to_list port_names_and_widths);
@@ -202,10 +202,10 @@ end
 
 module _ = struct
   module M = struct
-    type 'a t = { foo : 'a } [@@deriving sexp_of, hardcaml]
+    type 'a t = { foo : 'a } [@@deriving hardcaml]
   end
 
-  type 'a t = { x : 'a M.t list [@length 1] } [@@deriving sexp_of, hardcaml]
+  type 'a t = { x : 'a M.t list [@length 1] } [@@deriving hardcaml]
 
   let%expect_test _ =
     print_t_list (to_list port_names_and_widths);
@@ -219,7 +219,7 @@ module _ = struct
     { a : 'a [@rtlprefix "X"]
     ; b : 'a
     }
-  [@@deriving sexp_of, hardcaml ~rtlprefix:"i_"]
+  [@@deriving hardcaml ~rtlprefix:"i_"]
 
   let%expect_test "rtlprefix_option" =
     print_t_list (to_list port_names_and_widths);
@@ -234,7 +234,7 @@ module _ = struct
     { a : 'a [@rtlsuffix "X"]
     ; b : 'a
     }
-  [@@deriving sexp_of, hardcaml ~rtlsuffix:"_o"]
+  [@@deriving hardcaml ~rtlsuffix:"_o"]
 
   let%expect_test "rtlsuffix_option" =
     print_t_list (to_list port_names_and_widths);
@@ -250,7 +250,7 @@ module _ = struct
     ; b : 'a Simple.t
     ; c : 'a Rtlname.t
     }
-  [@@deriving sexp_of, hardcaml ~rtlmangle:true]
+  [@@deriving hardcaml ~rtlmangle:true]
 
   let%expect_test "rtlmangle option" =
     print_t_list (to_list port_names_and_widths);
@@ -263,7 +263,7 @@ end
 
 module _ = struct
   module N = struct
-    type 'a t = { n : 'a } [@@deriving sexp_of, hardcaml]
+    type 'a t = { n : 'a } [@@deriving hardcaml]
   end
 
   type 'a t =
@@ -280,7 +280,7 @@ module _ = struct
     ; k : 'a N.t [@rtlsuffix "S"]
     ; l : 'a N.t
     }
-  [@@deriving sexp_of, hardcaml ~rtlmangle:true ~rtlprefix:"p" ~rtlsuffix:"s"]
+  [@@deriving hardcaml ~rtlmangle:true ~rtlprefix:"p" ~rtlsuffix:"s"]
 
   let%expect_test "options and overrides" =
     print_t_list (to_list port_names_and_widths);
@@ -302,9 +302,9 @@ module _ = struct
 end
 
 module Extended : sig
-  type 'a t = { foo : 'a } [@@deriving sexp_of, hardcaml]
+  type 'a t = { foo : 'a } [@@deriving hardcaml]
 end = struct
-  type 'a t = { foo : 'a } [@@deriving sexp_of, hardcaml]
+  type 'a t = { foo : 'a } [@@deriving hardcaml]
 end
 
 let%expect_test "extended" =
@@ -315,9 +315,9 @@ let%expect_test "extended" =
 ;;
 
 module Bar : sig
-  type 'a t = { bar : 'a } [@@deriving sexp_of, hardcaml ~ast]
+  type 'a t = { bar : 'a } [@@deriving hardcaml ~ast]
 end = struct
-  type 'a t = { bar : 'a (** bar documentation *) } [@@deriving sexp_of, hardcaml ~ast]
+  type 'a t = { bar : 'a (** bar documentation *) } [@@deriving hardcaml ~ast]
 end
 
 module Foo : Hardcaml.Interface.S_with_ast = struct
@@ -329,7 +329,7 @@ module Foo : Hardcaml.Interface.S_with_ast = struct
     ; lstm : 'a Bar.t list [@length 7] (** lstm documentation *)
     ; arrm : 'a Bar.t array [@length 0]
     }
-  [@@deriving sexp_of, hardcaml ~ast]
+  [@@deriving hardcaml ~ast]
 end
 
 let%expect_test "ast" =
@@ -418,7 +418,7 @@ module type Allow_nested_in_sig = sig
     { double_nested_field_type : 'a Bar.t Bar.t
     ; inline_functor_application : 'a Map.M(Int).t
     }
-  [@@deriving sexp_of, hardcaml]
+  [@@deriving hardcaml]
 end
 
 module Rtlmangle_with_seperator = struct
@@ -426,7 +426,7 @@ module Rtlmangle_with_seperator = struct
     { the_bar_field : 'a Bar.t [@rtlmangle "$"]
     ; the_simple_field : 'a Simple.t
     }
-  [@@deriving sexp_of, hardcaml ~rtlmangle:"___"]
+  [@@deriving hardcaml ~rtlmangle:"___"]
 end
 
 let%expect_test "rtlmangle with a non default seperator" =

@@ -1,3 +1,5 @@
-(library (name ppx_hardcaml_test)
+(library
+ (name ppx_hardcaml_test)
  (libraries base expect_test_helpers_core stdio)
- (preprocess (pps ppx_jane ppx_hardcaml)))
+ (preprocess
+  (pps ppx_jane ppx_hardcaml)))

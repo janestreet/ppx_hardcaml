@@ -301,6 +301,105 @@ module _ = struct
   ;;
 end
 
+(* Testing optional fields *)
+module _ = struct
+  module type Arg = sig
+    val exists : bool
+  end
+
+  module M = struct
+    type 'a t = { x : 'a [@bits 42] } [@@deriving hardcaml]
+  end
+
+  module Make (A : Arg) = struct
+    type 'a t =
+      { clock : 'a
+      ; optional_scalar : 'a option [@bits 12] [@exists A.exists] [@rtlname "os"]
+      ; optional_array_of_scalar : 'a array option
+           [@bits 12] [@length 2] [@exists A.exists] [@rtlname "oas$"]
+      ; optional_module : 'a M.t option [@exists A.exists] [@rtlprefix "om$"]
+      ; optional_list_of_modules : 'a M.t list option
+           [@length 2] [@exists A.exists] [@rtlprefix "olm$"]
+      }
+    [@@deriving hardcaml]
+
+    let test () =
+      print_endline "Port names and widths:";
+      printf
+        "  %s\n"
+        (Sexp.to_string_hum
+           ~indent:3
+           ([%sexp_of: (string * int) t] port_names_and_widths));
+      print_endline "";
+      print_endline "to_list";
+      printf
+        "  %s\n"
+        (Sexp.to_string_hum ~indent:2 ([%sexp_of: string list] (to_list port_names)));
+      print_endline "";
+      print_endline "iter";
+      iter port_names ~f:(printf "  - %s\n");
+      print_endline "";
+      print_endline "iter2";
+      iter2 port_names port_widths ~f:(printf "  - %s: %d\n")
+    ;;
+  end
+
+  module A = Make (struct
+    let exists = true
+  end)
+
+  module B = Make (struct
+    let exists = false
+  end)
+
+  let%expect_test "optional fields" =
+    A.test ();
+    [%expect
+      {|
+      Port names and widths:
+        ((clock (clock 1)) (optional_scalar ((os 12)))
+         (optional_array_of_scalar (((oas$0 12) (oas$1 12))))
+         (optional_module (((x (om$x 42)))))
+         (optional_list_of_modules ((((x (olm$x0 42))) ((x (olm$x1 42)))))))
+
+      to_list
+        (clock os oas$0 oas$1 om$x olm$x0 olm$x1)
+
+      iter
+        - clock
+        - os
+        - oas$0
+        - oas$1
+        - om$x
+        - olm$x0
+        - olm$x1
+
+      iter2
+        - clock: 1
+        - os: 12
+        - oas$0: 12
+        - oas$1: 12
+        - om$x: 42
+        - olm$x0: 42
+        - olm$x1: 42 |}];
+    B.test ();
+    [%expect
+      {|
+      Port names and widths:
+        ((clock (clock 1)) (optional_scalar ()) (optional_array_of_scalar ())
+         (optional_module ()) (optional_list_of_modules ()))
+
+      to_list
+        (clock)
+
+      iter
+        - clock
+
+      iter2
+        - clock: 1 |}]
+  ;;
+end
+
 module Extended : sig
   type 'a t = { foo : 'a } [@@deriving hardcaml]
 end = struct

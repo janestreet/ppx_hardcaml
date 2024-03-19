@@ -10,8 +10,7 @@ module Simple = struct
 
   let%expect_test "simple" =
     print_t_list (to_list port_names_and_widths);
-    [%expect {|
-      a 1 |}]
+    [%expect {| a 1 |}]
   ;;
 end
 
@@ -26,14 +25,16 @@ module _ = struct
     print_t_list (to_list port_names_and_widths);
     [%expect {|
       a 12
-      b 0 |}]
+      b 0
+      |}]
   ;;
 
   let%expect_test "iter" =
     iter ~f:(fun si -> print_s [%sexp (si : string * int)]) port_names_and_widths;
     [%expect {|
       (a 12)
-      (b 0) |}]
+      (b 0)
+      |}]
   ;;
 
   let%expect_test "iter2" =
@@ -43,14 +44,16 @@ module _ = struct
       { a = 5; b = 3 };
     [%expect {|
       ((a 12) 5)
-      ((b 0) 3) |}]
+      ((b 0) 3)
+      |}]
   ;;
 
   let%expect_test "map" =
     print_t_list (to_list @@ map ~f:(fun (n, b) -> n, b + 1) port_names_and_widths);
     [%expect {|
       a 13
-      b 1 |}]
+      b 1
+      |}]
   ;;
 
   let%expect_test "map2" =
@@ -59,14 +62,16 @@ module _ = struct
        @@ map2 ~f:(fun (n, b) c -> n, b + c) port_names_and_widths { a = 5; b = 3 });
     [%expect {|
       a 17
-      b 3 |}]
+      b 3
+      |}]
   ;;
 
   let%expect_test "[map] order" =
     ignore (map ~f:(fun si -> print_s [%sexp (si : string * int)]) port_names_and_widths);
     [%expect {|
       (a 12)
-      (b 0) |}]
+      (b 0)
+      |}]
   ;;
 
   let%expect_test "[map2] order" =
@@ -77,7 +82,8 @@ module _ = struct
          { a = 5; b = 3 });
     [%expect {|
       ((a 12) 5)
-      ((b 0) 3) |}]
+      ((b 0) 3)
+      |}]
   ;;
 end
 
@@ -86,8 +92,7 @@ module Rtlname = struct
 
   let%expect_test "rtlname" =
     print_t_list (to_list port_names_and_widths);
-    [%expect {|
-      WORLD 1 |}]
+    [%expect {| WORLD 1 |}]
   ;;
 end
 
@@ -104,7 +109,8 @@ module _ = struct
     [%expect {|
       a 2
       a 1
-      WORLD 1 |}]
+      WORLD 1
+      |}]
   ;;
 end
 
@@ -119,11 +125,13 @@ module _ = struct
 
   let%expect_test "rtlprefix" =
     print_t_list (to_list port_names_and_widths);
-    [%expect {|
+    [%expect
+      {|
       hello_world 1
       hello_WORLD 1
       i_a 1
-      i_y_a 1|}]
+      i_y_a 1
+      |}]
   ;;
 end
 
@@ -138,11 +146,13 @@ module _ = struct
 
   let%expect_test "rtlsuffix" =
     print_t_list (to_list port_names_and_widths);
-    [%expect {|
+    [%expect
+      {|
       hello_world 1
       hello_WORLD 1
       a_o 1
-      y_a_o 1 |}]
+      y_a_o 1
+      |}]
   ;;
 end
 
@@ -156,13 +166,15 @@ module _ = struct
 
   let%expect_test "arrays" =
     print_t_list (to_list port_names_and_widths);
-    [%expect {|
+    [%expect
+      {|
       x0 1
       y0 5
       y1 5
       y2 5
       Z0 1
-      Z1 1 |}]
+      Z1 1
+      |}]
   ;;
 end
 
@@ -175,8 +187,7 @@ module _ = struct
 
   let%expect_test _ =
     print_t_list (to_list port_names_and_widths);
-    [%expect {|
-      foo0 1 |}]
+    [%expect {| foo0 1 |}]
   ;;
 end
 
@@ -190,13 +201,15 @@ module _ = struct
 
   let%expect_test "lists" =
     print_t_list (to_list port_names_and_widths);
-    [%expect {|
+    [%expect
+      {|
       x0 1
       y0 5
       y1 5
       y2 5
       Z0 1
-      Z1 1 |}]
+      Z1 1
+      |}]
   ;;
 end
 
@@ -209,8 +222,7 @@ module _ = struct
 
   let%expect_test _ =
     print_t_list (to_list port_names_and_widths);
-    [%expect {|
-      foo0 1 |}]
+    [%expect {| foo0 1 |}]
   ;;
 end
 
@@ -225,7 +237,8 @@ module _ = struct
     print_t_list (to_list port_names_and_widths);
     [%expect {|
       Xa 1
-      i_b 1 |}]
+      i_b 1
+      |}]
   ;;
 end
 
@@ -240,7 +253,8 @@ module _ = struct
     print_t_list (to_list port_names_and_widths);
     [%expect {|
       aX 1
-      b_o 1 |}]
+      b_o 1
+      |}]
   ;;
 end
 
@@ -257,7 +271,8 @@ module _ = struct
     [%expect {|
       a 2
       b_a 1
-      c_WORLD 1 |}]
+      c_WORLD 1
+      |}]
   ;;
 end
 
@@ -297,7 +312,8 @@ module _ = struct
       Pi_nS 1
       Pj_ns 1
       pk_nS 1
-      pl_ns 1 |}]
+      pl_ns 1
+      |}]
   ;;
 end
 
@@ -381,7 +397,8 @@ module _ = struct
         - oas$1: 12
         - om$x: 42
         - olm$x0: 42
-        - olm$x1: 42 |}];
+        - olm$x1: 42
+      |}];
     B.test ();
     [%expect
       {|
@@ -396,7 +413,8 @@ module _ = struct
         - clock
 
       iter2
-        - clock: 1 |}]
+        - clock: 1
+      |}]
   ;;
 end
 
@@ -505,7 +523,8 @@ let%expect_test "ast" =
       (sequence ((
         (kind   Array)
         (length 0))))
-      (doc ())))|}]
+      (doc ())))
+    |}]
 ;;
 
 (* This type signatures below demonstrates the PPX is more relaxed in mlis. Namely, even
@@ -534,7 +553,8 @@ let%expect_test "rtlmangle with a non default seperator" =
   [%expect
     {|
     ((the_bar_field    ((bar the_bar_field$bar)))
-     (the_simple_field ((a   the_simple_field___a)))) |}]
+     (the_simple_field ((a   the_simple_field___a))))
+    |}]
 ;;
 
 (* Demonstrate naming functionality *)
@@ -588,7 +608,8 @@ let%test_module _ =
         {|
         ("Hardcaml.Scope.naming called" (scope Dummy_scope)
          (signal_to_name Dummy_signal)
-         (name_for_signal _use_this_name_for_the_signal)) |}]
+         (name_for_signal _use_this_name_for_the_signal))
+        |}]
     ;;
 
     let%expect_test "naming a type" =
@@ -603,7 +624,8 @@ let%test_module _ =
          (thing_to_name ((test_signal Dummy_signal))))
         ("Hardcaml.Scope.naming called" (scope Dummy_scope)
          (signal_to_name Dummy_signal)
-         (name_for_signal _use_this_name_for_the_signal_in_the_type$test_signal)) |}]
+         (name_for_signal _use_this_name_for_the_signal_in_the_type$test_signal))
+        |}]
     ;;
 
     let%expect_test "naming a variable" =
@@ -615,7 +637,8 @@ let%test_module _ =
         {|
         ("Hardcaml.Scope.naming called" (scope Dummy_scope)
          (signal_to_name Dummy_signal)
-         (name_for_signal _use_this_name_for_the_signal_in_the_var)) |}]
+         (name_for_signal _use_this_name_for_the_signal_in_the_var))
+        |}]
     ;;
   end)
 ;;

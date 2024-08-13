@@ -23,7 +23,8 @@ module _ = struct
 
   let%expect_test "set bits" =
     print_t_list (to_list port_names_and_widths);
-    [%expect {|
+    [%expect
+      {|
       a 12
       b 0
       |}]
@@ -31,7 +32,8 @@ module _ = struct
 
   let%expect_test "iter" =
     iter ~f:(fun si -> print_s [%sexp (si : string * int)]) port_names_and_widths;
-    [%expect {|
+    [%expect
+      {|
       (a 12)
       (b 0)
       |}]
@@ -42,7 +44,8 @@ module _ = struct
       ~f:(fun si i -> print_s [%sexp ((si, i) : (string * int) * int)])
       port_names_and_widths
       { a = 5; b = 3 };
-    [%expect {|
+    [%expect
+      {|
       ((a 12) 5)
       ((b 0) 3)
       |}]
@@ -50,7 +53,8 @@ module _ = struct
 
   let%expect_test "map" =
     print_t_list (to_list @@ map ~f:(fun (n, b) -> n, b + 1) port_names_and_widths);
-    [%expect {|
+    [%expect
+      {|
       a 13
       b 1
       |}]
@@ -60,7 +64,8 @@ module _ = struct
     print_t_list
       (to_list
        @@ map2 ~f:(fun (n, b) c -> n, b + c) port_names_and_widths { a = 5; b = 3 });
-    [%expect {|
+    [%expect
+      {|
       a 17
       b 3
       |}]
@@ -68,7 +73,8 @@ module _ = struct
 
   let%expect_test "[map] order" =
     ignore (map ~f:(fun si -> print_s [%sexp (si : string * int)]) port_names_and_widths);
-    [%expect {|
+    [%expect
+      {|
       (a 12)
       (b 0)
       |}]
@@ -80,7 +86,8 @@ module _ = struct
          ~f:(fun si i -> print_s [%sexp ((si, i) : (string * int) * int)])
          port_names_and_widths
          { a = 5; b = 3 });
-    [%expect {|
+    [%expect
+      {|
       ((a 12) 5)
       ((b 0) 3)
       |}]
@@ -106,7 +113,8 @@ module _ = struct
 
   let%expect_test "Nesting" =
     print_t_list (to_list port_names_and_widths);
-    [%expect {|
+    [%expect
+      {|
       a 2
       a 1
       WORLD 1
@@ -235,7 +243,8 @@ module _ = struct
 
   let%expect_test "rtlprefix_option" =
     print_t_list (to_list port_names_and_widths);
-    [%expect {|
+    [%expect
+      {|
       Xa 1
       i_b 1
       |}]
@@ -251,7 +260,8 @@ module _ = struct
 
   let%expect_test "rtlsuffix_option" =
     print_t_list (to_list port_names_and_widths);
-    [%expect {|
+    [%expect
+      {|
       aX 1
       b_o 1
       |}]
@@ -268,7 +278,8 @@ module _ = struct
 
   let%expect_test "rtlmangle option" =
     print_t_list (to_list port_names_and_widths);
-    [%expect {|
+    [%expect
+      {|
       a 2
       b_a 1
       c_WORLD 1
@@ -361,12 +372,12 @@ module _ = struct
   end
 
   module A = Make (struct
-    let exists = true
-  end)
+      let exists = true
+    end)
 
   module B = Make (struct
-    let exists = false
-  end)
+      let exists = false
+    end)
 
   let%expect_test "optional fields" =
     A.test ();
@@ -557,6 +568,69 @@ let%expect_test "rtlmangle with a non default seperator" =
     |}]
 ;;
 
+(* [derive_from_map2] builds the interface from just the map2 function. Trades compilation
+   time for runtime performance. *)
+module _ : sig
+  type 'a t =
+    { a : 'a
+    ; b : 'a
+    }
+  [@@deriving hardcaml]
+end = struct
+  type 'a t =
+    { a : 'a [@bits 5]
+    ; b : 'a [@bits 9]
+    }
+  [@@deriving hardcaml ~derive_from_map2]
+
+  let%expect_test "to_list" =
+    let names = to_list port_names in
+    print_s [%message (names : string list)];
+    [%expect {| (names (a b)) |}]
+  ;;
+
+  let%expect_test "map" =
+    let t = map { a = 1; b = 2 } ~f:(( + ) 1) in
+    print_s [%message (t : int t)];
+    [%expect
+      {|
+      (t (
+        (a 2)
+        (b 3)))
+      |}]
+  ;;
+
+  let%expect_test "iter" =
+    iter port_names ~f:print_endline;
+    [%expect
+      {|
+      a
+      b
+      |}]
+  ;;
+
+  let%expect_test "map2" =
+    let t = map2 { a = 1; b = 2 } { a = 5; b = 7 } ~f:( + ) in
+    print_s [%message (t : int t)];
+    [%expect
+      {|
+      (t (
+        (a 6)
+        (b 9)))
+      |}]
+  ;;
+
+  let%expect_test "iter2" =
+    iter2 port_names port_widths ~f:(fun name width ->
+      print_endline [%string "%{name} %{width#Int}"]);
+    [%expect
+      {|
+      a 5
+      b 9
+      |}]
+  ;;
+end
+
 (* Demonstrate naming functionality *)
 let%test_module _ =
   (module struct
@@ -596,7 +670,7 @@ let%test_module _ =
           [%message "Test_type.apply_names called" (prefix : string) (thing_to_name : t)];
         ignore
           (naming_op thing_to_name.test_signal (prefix ^ "test_signal")
-            : Hardcaml.Signal.t);
+           : Hardcaml.Signal.t);
         thing_to_name
       ;;
     end

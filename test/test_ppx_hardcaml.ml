@@ -632,87 +632,84 @@ end = struct
 end
 
 (* Demonstrate naming functionality *)
-let%test_module _ =
-  (module struct
-    (* The naming PPX explicitly refers to Hardcaml in its expansion. Provide stubs for
+module%test _ = struct
+  (* The naming PPX explicitly refers to Hardcaml in its expansion. Provide stubs for
        the functions and types it uses. *)
-    module Hardcaml = struct
-      module Signal = struct
-        type t = Dummy_signal [@@deriving sexp]
-      end
-
-      module Scope = struct
-        type t = Dummy_scope [@@deriving sexp]
-
-        let naming scope signal_to_name name_for_signal =
-          Core.print_s
-            [%message
-              "Hardcaml.Scope.naming called"
-                (scope : t)
-                (signal_to_name : Signal.t)
-                (name_for_signal : string)];
-          signal_to_name
-        ;;
-      end
-
-      module Always = struct
-        module Variable = struct
-          type t = { value : Signal.t }
-        end
-      end
+  module Hardcaml = struct
+    module Signal = struct
+      type t = Dummy_signal [@@deriving sexp]
     end
 
-    module Test_type = struct
-      type t = { test_signal : Hardcaml.Signal.t } [@@deriving sexp]
+    module Scope = struct
+      type t = Dummy_scope [@@deriving sexp]
 
-      let apply_names ~prefix ~naming_op thing_to_name =
+      let naming scope signal_to_name name_for_signal =
         Core.print_s
-          [%message "Test_type.apply_names called" (prefix : string) (thing_to_name : t)];
-        ignore
-          (naming_op thing_to_name.test_signal (prefix ^ "test_signal")
-           : Hardcaml.Signal.t);
-        thing_to_name
+          [%message
+            "Hardcaml.Scope.naming called"
+              (scope : t)
+              (signal_to_name : Signal.t)
+              (name_for_signal : string)];
+        signal_to_name
       ;;
     end
 
-    let%expect_test "naming a signal" =
-      let scope = Hardcaml.Scope.Dummy_scope in
-      let%hw _use_this_name_for_the_signal = Hardcaml.Signal.Dummy_signal in
-      [%expect
-        {|
-        ("Hardcaml.Scope.naming called" (scope Dummy_scope)
-         (signal_to_name Dummy_signal)
-         (name_for_signal _use_this_name_for_the_signal))
-        |}]
-    ;;
+    module Always = struct
+      module Variable = struct
+        type t = { value : Signal.t }
+      end
+    end
+  end
 
-    let%expect_test "naming a type" =
-      let scope = Hardcaml.Scope.Dummy_scope in
-      let%hw.Test_type _use_this_name_for_the_signal_in_the_type =
-        { Test_type.test_signal = Dummy_signal }
-      in
-      [%expect
-        {|
-        ("Test_type.apply_names called"
-         (prefix _use_this_name_for_the_signal_in_the_type$)
-         (thing_to_name ((test_signal Dummy_signal))))
-        ("Hardcaml.Scope.naming called" (scope Dummy_scope)
-         (signal_to_name Dummy_signal)
-         (name_for_signal _use_this_name_for_the_signal_in_the_type$test_signal))
-        |}]
-    ;;
+  module Test_type = struct
+    type t = { test_signal : Hardcaml.Signal.t } [@@deriving sexp]
 
-    let%expect_test "naming a variable" =
-      let scope = Hardcaml.Scope.Dummy_scope in
-      let%hw_var _use_this_name_for_the_signal_in_the_var =
-        { Hardcaml.Always.Variable.value = Dummy_signal }
-      in
-      [%expect
-        {|
-        ("Hardcaml.Scope.naming called" (scope Dummy_scope)
-         (signal_to_name Dummy_signal)
-         (name_for_signal _use_this_name_for_the_signal_in_the_var))
-        |}]
+    let apply_names ~prefix ~naming_op thing_to_name =
+      Core.print_s
+        [%message "Test_type.apply_names called" (prefix : string) (thing_to_name : t)];
+      ignore
+        (naming_op thing_to_name.test_signal (prefix ^ "test_signal") : Hardcaml.Signal.t);
+      thing_to_name
     ;;
-  end)
-;;
+  end
+
+  let%expect_test "naming a signal" =
+    let scope = Hardcaml.Scope.Dummy_scope in
+    let%hw _use_this_name_for_the_signal = Hardcaml.Signal.Dummy_signal in
+    [%expect
+      {|
+      ("Hardcaml.Scope.naming called" (scope Dummy_scope)
+       (signal_to_name Dummy_signal)
+       (name_for_signal _use_this_name_for_the_signal))
+      |}]
+  ;;
+
+  let%expect_test "naming a type" =
+    let scope = Hardcaml.Scope.Dummy_scope in
+    let%hw.Test_type _use_this_name_for_the_signal_in_the_type =
+      { Test_type.test_signal = Dummy_signal }
+    in
+    [%expect
+      {|
+      ("Test_type.apply_names called"
+       (prefix _use_this_name_for_the_signal_in_the_type$)
+       (thing_to_name ((test_signal Dummy_signal))))
+      ("Hardcaml.Scope.naming called" (scope Dummy_scope)
+       (signal_to_name Dummy_signal)
+       (name_for_signal _use_this_name_for_the_signal_in_the_type$test_signal))
+      |}]
+  ;;
+
+  let%expect_test "naming a variable" =
+    let scope = Hardcaml.Scope.Dummy_scope in
+    let%hw_var _use_this_name_for_the_signal_in_the_var =
+      { Hardcaml.Always.Variable.value = Dummy_signal }
+    in
+    [%expect
+      {|
+      ("Hardcaml.Scope.naming called" (scope Dummy_scope)
+       (signal_to_name Dummy_signal)
+       (name_for_signal _use_this_name_for_the_signal_in_the_var))
+      |}]
+  ;;
+end

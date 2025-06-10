@@ -10,6 +10,12 @@ module Array = struct
   ;;
 end
 
+module Iarray = struct
+  include Iarray
+
+  let for_ = Array.for_
+end
+
 module Int = Int
 module Interface = Hardcaml.Interface
 module List = List

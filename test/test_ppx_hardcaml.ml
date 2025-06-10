@@ -164,7 +164,7 @@ module _ = struct
   ;;
 end
 
-module _ = struct
+module%test Arrays = struct
   type 'a t =
     { x : 'a array [@length 1]
     ; y : 'a array [@length 3] [@bits 5]
@@ -186,12 +186,47 @@ module _ = struct
   ;;
 end
 
-module _ = struct
+module%test Array_with_module = struct
   module M = struct
     type 'a t = { foo : 'a } [@@deriving hardcaml]
   end
 
   type 'a t = { x : 'a M.t array [@length 1] } [@@deriving hardcaml]
+
+  let%expect_test _ =
+    print_t_list (to_list port_names_and_widths);
+    [%expect {| foo0 1 |}]
+  ;;
+end
+
+module%test Iarrays = struct
+  type 'a t =
+    { x : 'a iarray [@length 1]
+    ; y : 'a iarray [@length 3] [@bits 5]
+    ; z : 'a iarray [@length 2] [@rtlname "Z"]
+    }
+  [@@deriving hardcaml]
+
+  let%expect_test "arrays" =
+    print_t_list (to_list port_names_and_widths);
+    [%expect
+      {|
+      x0 1
+      y0 5
+      y1 5
+      y2 5
+      Z0 1
+      Z1 1
+      |}]
+  ;;
+end
+
+module%test Iarray_with_module = struct
+  module M = struct
+    type 'a t = { foo : 'a } [@@deriving hardcaml]
+  end
+
+  type 'a t = { x : 'a M.t iarray [@length 1] } [@@deriving hardcaml]
 
   let%expect_test _ =
     print_t_list (to_list port_names_and_widths);
@@ -344,6 +379,8 @@ module _ = struct
       ; optional_scalar : 'a option [@bits 12] [@exists A.exists] [@rtlname "os"]
       ; optional_array_of_scalar : 'a array option
            [@bits 12] [@length 2] [@exists A.exists] [@rtlname "oas$"]
+      ; optional_iarray_of_scalar : 'a array option
+           [@bits 12] [@length 2] [@exists A.exists] [@rtlname "ois$"]
       ; optional_module : 'a M.t option [@exists A.exists] [@rtlprefix "om$"]
       ; optional_list_of_modules : 'a M.t list option
            [@length 2] [@exists A.exists] [@rtlprefix "olm$"]
@@ -386,17 +423,20 @@ module _ = struct
       Port names and widths:
         ((clock (clock 1)) (optional_scalar ((os 12)))
          (optional_array_of_scalar (((oas$0 12) (oas$1 12))))
+         (optional_iarray_of_scalar (((ois$0 12) (ois$1 12))))
          (optional_module (((x (om$x 42)))))
          (optional_list_of_modules ((((x (olm$x0 42))) ((x (olm$x1 42)))))))
 
       to_list
-        (clock os oas$0 oas$1 om$x olm$x0 olm$x1)
+        (clock os oas$0 oas$1 ois$0 ois$1 om$x olm$x0 olm$x1)
 
       iter
         - clock
         - os
         - oas$0
         - oas$1
+        - ois$0
+        - ois$1
         - om$x
         - olm$x0
         - olm$x1
@@ -406,6 +446,8 @@ module _ = struct
         - os: 12
         - oas$0: 12
         - oas$1: 12
+        - ois$0: 12
+        - ois$1: 12
         - om$x: 42
         - olm$x0: 42
         - olm$x1: 42
@@ -415,7 +457,8 @@ module _ = struct
       {|
       Port names and widths:
         ((clock (clock 1)) (optional_scalar ()) (optional_array_of_scalar ())
-         (optional_module ()) (optional_list_of_modules ()))
+         (optional_iarray_of_scalar ()) (optional_module ())
+         (optional_list_of_modules ()))
 
       to_list
         (clock)
@@ -785,13 +828,54 @@ module%test _ = struct
       |}]
   ;;
 
+  let%expect_test "naming an iarray of signals" =
+    let scope = Hardcaml.Scope.Dummy_scope in
+    let%hw_iarray mylist =
+      Iarray.of_list Hardcaml.Signal.[ Dummy_signal; Dummy_signal ]
+    in
+    let%hw_iarray.Test_type mylist_records =
+      [ { Test_type.test_signal = Dummy_signal }
+      ; { Test_type.test_signal = Dummy_signal }
+      ]
+      |> Iarray.of_list
+    in
+    (* Check variables are accessible after renaming *)
+    ignore (mylist : Hardcaml.Signal.t iarray);
+    ignore (mylist_records : Test_type.t iarray);
+    ();
+    [%expect
+      {|
+      ("Hardcaml.Scope.name called" (scope Dummy_scope) (name_for_signal mylist$0))
+      ("Signal.__ppx_auto_name called" (prefix mylist$0)
+       (thing_to_name Dummy_signal))
+      ("Hardcaml.Scope.name called" (scope Dummy_scope) (name_for_signal mylist$1))
+      ("Signal.__ppx_auto_name called" (prefix mylist$1)
+       (thing_to_name Dummy_signal))
+      ("Hardcaml.Scope.name called" (scope Dummy_scope)
+       (name_for_signal mylist_records$0))
+      ("Test_type.__ppx_auto_name called" (prefix mylist_records$0)
+       (thing_to_name ((test_signal Dummy_signal))))
+      ("Hardcaml.Scope.name called" (scope Dummy_scope)
+       (name_for_signal mylist_records$1))
+      ("Test_type.__ppx_auto_name called" (prefix mylist_records$1)
+       (thing_to_name ((test_signal Dummy_signal))))
+      |}]
+  ;;
+
   let%expect_test "naming a list/array of always variables" =
     let scope = Hardcaml.Scope.Dummy_scope in
     let%hw_var_list mylist = [ { value = Dummy_signal }; { value = Dummy_signal } ] in
     let%hw_var_array myarray = [| { value = Dummy_signal }; { value = Dummy_signal } |] in
+    let%hw_var_iarray myiarray =
+      [ { Hardcaml.Always.Variable.value = Dummy_signal }
+      ; { Hardcaml.Always.Variable.value = Dummy_signal }
+      ]
+      |> Iarray.of_list
+    in
     (* Check variables are accessible after renaming *)
     ignore (mylist : Hardcaml.Always.Variable.t list);
     ignore (myarray : Hardcaml.Always.Variable.t array);
+    ignore (myiarray : Hardcaml.Always.Variable.t iarray);
     ();
     [%expect
       {|
@@ -808,6 +892,14 @@ module%test _ = struct
       ("Hardcaml.Scope.name called" (scope Dummy_scope)
        (name_for_signal myarray$1))
       ("Variable.__ppx_auto_name called" (prefix myarray$1)
+       (thing_to_name ((value Dummy_signal))))
+      ("Hardcaml.Scope.name called" (scope Dummy_scope)
+       (name_for_signal myiarray$0))
+      ("Variable.__ppx_auto_name called" (prefix myiarray$0)
+       (thing_to_name ((value Dummy_signal))))
+      ("Hardcaml.Scope.name called" (scope Dummy_scope)
+       (name_for_signal myiarray$1))
+      ("Variable.__ppx_auto_name called" (prefix myiarray$1)
        (thing_to_name ((value Dummy_signal))))
       |}]
   ;;

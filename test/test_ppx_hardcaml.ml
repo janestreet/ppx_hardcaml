@@ -1,9 +1,30 @@
 open! Import
 
+let%expect_test "Is hardcaml linked?" =
+  if not !Ppx_hardcaml_runtime0.hardcaml_is_linked
+  then failwith "ppx_hardcaml_runtime should link Hardcaml!"
+;;
+
+(* Stuff we need for the test code *)
 let print_t_list t =
   List.iter t ~f:(fun (n, b) -> Printf.printf "%s %i\n" n b);
   printf "\n"
 ;;
+
+let iarray_of_list = Iarray.of_list
+
+module Base_int = Int
+
+(* Alias the modules we export from the runtime. Dont allow them to be accessed directly.
+*)
+module Array = struct end
+module List = struct end
+module Iarray = struct end
+module Int = struct end
+module _ = Array
+module _ = List
+module _ = Iarray
+module _ = Int
 
 module Simple = struct
   type 'a t = { a : 'a } [@@deriving hardcaml]
@@ -14,7 +35,7 @@ module Simple = struct
   ;;
 end
 
-module _ = struct
+module%test Set_bits = struct
   type 'a t =
     { a : 'a [@bits 12]
     ; b : 'a [@bits 0]
@@ -103,13 +124,13 @@ module Rtlname = struct
   ;;
 end
 
-module _ = struct
+module%test Nesting = struct
   type 'a t =
     { a : 'a [@bits 2]
     ; b : 'a Simple.t
     ; c : 'a Rtlname.t
     }
-  [@@deriving hardcaml]
+  [@@deriving hardcaml ~rtlmangle:false]
 
   let%expect_test "Nesting" =
     print_t_list (to_list port_names_and_widths);
@@ -122,14 +143,14 @@ module _ = struct
   ;;
 end
 
-module _ = struct
+module%test Rtlprefix = struct
   type 'a t =
     { world : 'a [@rtlprefix "hello_"]
     ; foo : 'a [@rtlprefix "hello_"] [@rtlname "WORLD"]
     ; x : 'a Simple.t [@rtlprefix "i_"]
-    ; y : 'a Simple.t [@rtlprefix "i_"] [@rtlmangle true]
+    ; y : 'a Simple.t [@rtlprefix "i_"] [@rtlmangle "_"]
     }
-  [@@deriving hardcaml]
+  [@@deriving hardcaml ~rtlmangle:false]
 
   let%expect_test "rtlprefix" =
     print_t_list (to_list port_names_and_widths);
@@ -143,14 +164,14 @@ module _ = struct
   ;;
 end
 
-module _ = struct
+module%test Rtlsuffix = struct
   type 'a t =
     { hello : 'a [@rtlsuffix "_world"]
     ; foo : 'a [@rtlname "hello_"] [@rtlsuffix "WORLD"]
     ; x : 'a Simple.t [@rtlsuffix "_o"]
-    ; y : 'a Simple.t [@rtlsuffix "_o"] [@rtlmangle true]
+    ; y : 'a Simple.t [@rtlsuffix "_o"] [@rtlmangle "_"]
     }
-  [@@deriving hardcaml]
+  [@@deriving hardcaml ~rtlmangle:false]
 
   let%expect_test "rtlsuffix" =
     print_t_list (to_list port_names_and_widths);
@@ -170,7 +191,7 @@ module%test Arrays = struct
     ; y : 'a array [@length 3] [@bits 5]
     ; z : 'a array [@length 2] [@rtlname "Z"]
     }
-  [@@deriving hardcaml]
+  [@@deriving hardcaml ~rtlmangle:false]
 
   let%expect_test "arrays" =
     print_t_list (to_list port_names_and_widths);
@@ -191,7 +212,7 @@ module%test Array_with_module = struct
     type 'a t = { foo : 'a } [@@deriving hardcaml]
   end
 
-  type 'a t = { x : 'a M.t array [@length 1] } [@@deriving hardcaml]
+  type 'a t = { x : 'a M.t array [@length 1] } [@@deriving hardcaml ~rtlmangle:false]
 
   let%expect_test _ =
     print_t_list (to_list port_names_and_widths);
@@ -205,7 +226,7 @@ module%test Iarrays = struct
     ; y : 'a iarray [@length 3] [@bits 5]
     ; z : 'a iarray [@length 2] [@rtlname "Z"]
     }
-  [@@deriving hardcaml]
+  [@@deriving hardcaml ~rtlmangle:false]
 
   let%expect_test "arrays" =
     print_t_list (to_list port_names_and_widths);
@@ -226,7 +247,7 @@ module%test Iarray_with_module = struct
     type 'a t = { foo : 'a } [@@deriving hardcaml]
   end
 
-  type 'a t = { x : 'a M.t iarray [@length 1] } [@@deriving hardcaml]
+  type 'a t = { x : 'a M.t iarray [@length 1] } [@@deriving hardcaml ~rtlmangle:false]
 
   let%expect_test _ =
     print_t_list (to_list port_names_and_widths);
@@ -234,13 +255,13 @@ module%test Iarray_with_module = struct
   ;;
 end
 
-module _ = struct
+module%test Lists = struct
   type 'a t =
     { x : 'a list [@length 1]
     ; y : 'a list [@length 3] [@bits 5]
     ; z : 'a list [@length 2] [@rtlname "Z"]
     }
-  [@@deriving hardcaml]
+  [@@deriving hardcaml ~rtlmangle:false]
 
   let%expect_test "lists" =
     print_t_list (to_list port_names_and_widths);
@@ -256,12 +277,12 @@ module _ = struct
   ;;
 end
 
-module _ = struct
+module%test List_with_module = struct
   module M = struct
     type 'a t = { foo : 'a } [@@deriving hardcaml]
   end
 
-  type 'a t = { x : 'a M.t list [@length 1] } [@@deriving hardcaml]
+  type 'a t = { x : 'a M.t list [@length 1] } [@@deriving hardcaml ~rtlmangle:false]
 
   let%expect_test _ =
     print_t_list (to_list port_names_and_widths);
@@ -269,7 +290,7 @@ module _ = struct
   ;;
 end
 
-module _ = struct
+module%test Rtlprefix_option = struct
   type 'a t =
     { a : 'a [@rtlprefix "X"]
     ; b : 'a
@@ -286,7 +307,7 @@ module _ = struct
   ;;
 end
 
-module _ = struct
+module%test Rtlsuffix_option = struct
   type 'a t =
     { a : 'a [@rtlsuffix "X"]
     ; b : 'a
@@ -303,13 +324,13 @@ module _ = struct
   ;;
 end
 
-module _ = struct
+module%test Rtlmangle_option = struct
   type 'a t =
     { a : 'a [@bits 2]
     ; b : 'a Simple.t
     ; c : 'a Rtlname.t
     }
-  [@@deriving hardcaml ~rtlmangle:true]
+  [@@deriving hardcaml ~rtlmangle:"_"]
 
   let%expect_test "rtlmangle option" =
     print_t_list (to_list port_names_and_widths);
@@ -322,7 +343,7 @@ module _ = struct
   ;;
 end
 
-module _ = struct
+module%test Options = struct
   module N = struct
     type 'a t = { n : 'a } [@@deriving hardcaml]
   end
@@ -341,7 +362,7 @@ module _ = struct
     ; k : 'a N.t [@rtlsuffix "S"]
     ; l : 'a N.t
     }
-  [@@deriving hardcaml ~rtlmangle:true ~rtlprefix:"p" ~rtlsuffix:"s"]
+  [@@deriving hardcaml ~rtlmangle:"_" ~rtlprefix:"p" ~rtlsuffix:"s"]
 
   let%expect_test "options and overrides" =
     print_t_list (to_list port_names_and_widths);
@@ -385,7 +406,7 @@ module _ = struct
       ; optional_list_of_modules : 'a M.t list option
            [@length 2] [@exists A.exists] [@rtlprefix "olm$"]
       }
-    [@@deriving hardcaml]
+    [@@deriving hardcaml ~rtlmangle:false]
 
     let test () =
       print_endline "Port names and widths:";
@@ -500,7 +521,7 @@ module Foo : Hardcaml.Interface.S_with_ast = struct
     ; lstm : 'a Bar.t list [@length 7] (** lstm documentation *)
     ; arrm : 'a Bar.t array [@length 0]
     }
-  [@@deriving hardcaml ~ast]
+  [@@deriving hardcaml ~rtlmangle:false ~ast]
 end
 
 let%expect_test "ast" =
@@ -588,7 +609,7 @@ let%expect_test "ast" =
 module type Allow_nested_in_sig = sig
   type 'a t =
     { double_nested_field_type : 'a Bar.t Bar.t
-    ; inline_functor_application : 'a Map.M(Int).t
+    ; inline_functor_application : 'a Map.M(Base_int).t
     }
   [@@deriving hardcaml]
 end
@@ -665,7 +686,7 @@ end = struct
 
   let%expect_test "iter2" =
     iter2 port_names port_widths ~f:(fun name width ->
-      print_endline [%string "%{name} %{width#Int}"]);
+      print_endline [%string "%{name} %{width#Base_int}"]);
     [%expect
       {|
       a 5
@@ -712,6 +733,9 @@ module%test _ = struct
       end
     end
   end
+
+  (* By default we expect [Hardcaml] to be opened when using the naming ppx. *)
+  open Hardcaml
 
   module Test_type = struct
     type t = { test_signal : Hardcaml.Signal.t } [@@deriving sexp]
@@ -831,13 +855,13 @@ module%test _ = struct
   let%expect_test "naming an iarray of signals" =
     let scope = Hardcaml.Scope.Dummy_scope in
     let%hw_iarray mylist =
-      Iarray.of_list Hardcaml.Signal.[ Dummy_signal; Dummy_signal ]
+      iarray_of_list Hardcaml.Signal.[ Dummy_signal; Dummy_signal ]
     in
     let%hw_iarray.Test_type mylist_records =
       [ { Test_type.test_signal = Dummy_signal }
       ; { Test_type.test_signal = Dummy_signal }
       ]
-      |> Iarray.of_list
+      |> iarray_of_list
     in
     (* Check variables are accessible after renaming *)
     ignore (mylist : Hardcaml.Signal.t iarray);
@@ -870,7 +894,7 @@ module%test _ = struct
       [ { Hardcaml.Always.Variable.value = Dummy_signal }
       ; { Hardcaml.Always.Variable.value = Dummy_signal }
       ]
-      |> Iarray.of_list
+      |> iarray_of_list
     in
     (* Check variables are accessible after renaming *)
     ignore (mylist : Hardcaml.Always.Variable.t list);

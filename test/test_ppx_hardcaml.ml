@@ -35,7 +35,7 @@ module Simple = struct
   ;;
 end
 
-module _ = struct
+module%test Set_bits = struct
   type 'a t =
     { a : 'a [@bits 12]
     ; b : 'a [@bits 0]
@@ -124,7 +124,7 @@ module Rtlname = struct
   ;;
 end
 
-module _ = struct
+module%test Nesting = struct
   type 'a t =
     { a : 'a [@bits 2]
     ; b : 'a Simple.t
@@ -143,7 +143,7 @@ module _ = struct
   ;;
 end
 
-module _ = struct
+module%test Rtlprefix = struct
   type 'a t =
     { world : 'a [@rtlprefix "hello_"]
     ; foo : 'a [@rtlprefix "hello_"] [@rtlname "WORLD"]
@@ -164,7 +164,7 @@ module _ = struct
   ;;
 end
 
-module _ = struct
+module%test Rtlsuffix = struct
   type 'a t =
     { hello : 'a [@rtlsuffix "_world"]
     ; foo : 'a [@rtlname "hello_"] [@rtlsuffix "WORLD"]
@@ -255,7 +255,7 @@ module%test Iarray_with_module = struct
   ;;
 end
 
-module _ = struct
+module%test Lists = struct
   type 'a t =
     { x : 'a list [@length 1]
     ; y : 'a list [@length 3] [@bits 5]
@@ -277,7 +277,7 @@ module _ = struct
   ;;
 end
 
-module _ = struct
+module%test List_with_module = struct
   module M = struct
     type 'a t = { foo : 'a } [@@deriving hardcaml]
   end
@@ -290,7 +290,7 @@ module _ = struct
   ;;
 end
 
-module _ = struct
+module%test Rtlprefix_option = struct
   type 'a t =
     { a : 'a [@rtlprefix "X"]
     ; b : 'a
@@ -307,7 +307,7 @@ module _ = struct
   ;;
 end
 
-module _ = struct
+module%test Rtlsuffix_option = struct
   type 'a t =
     { a : 'a [@rtlsuffix "X"]
     ; b : 'a
@@ -324,7 +324,7 @@ module _ = struct
   ;;
 end
 
-module _ = struct
+module%test Rtlmangle_option = struct
   type 'a t =
     { a : 'a [@bits 2]
     ; b : 'a Simple.t
@@ -343,7 +343,7 @@ module _ = struct
   ;;
 end
 
-module _ = struct
+module%test Options = struct
   module N = struct
     type 'a t = { n : 'a } [@@deriving hardcaml]
   end

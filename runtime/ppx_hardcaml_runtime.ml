@@ -1,6 +1,7 @@
 open Base
 include Ppx_hardcaml_runtime0
 module Interface = Hardcaml.Interface
+module Wave_format = Hardcaml.Wave_format
 
 module Derive_interface_from_map2 (X : sig
     type 'a t [@@deriving equal ~localize, compare ~localize]
@@ -8,8 +9,9 @@ module Derive_interface_from_map2 (X : sig
     val sexp_of_t : ('a -> Sexplib0.Sexp.t) -> 'a t -> Sexplib0.Sexp.t
     val port_names_and_widths : (string * int) t
     val map2 : 'a t -> 'b t -> f:('a -> 'b -> 'c) -> 'c t
+    val wave_formats : Wave_format.t t
   end) =
-Interface.Make (struct
+Interface.Make_with_wave_formats (struct
     type 'a t = 'a X.t [@@deriving equal ~localize, compare ~localize]
 
     let sexp_of_t = X.sexp_of_t
@@ -24,4 +26,6 @@ Interface.Make (struct
       iter t ~f:(fun t -> x := t :: !x);
       List.rev !x
     ;;
+
+    let wave_formats = X.wave_formats
   end)

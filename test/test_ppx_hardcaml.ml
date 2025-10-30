@@ -343,6 +343,27 @@ module%test Rtlmangle_option = struct
   ;;
 end
 
+module%test With_valid_in_interface = struct
+  type 'a t =
+    { a : 'a [@bits 4]
+    ; b : 'a Hardcaml.With_valid.t [@bits 1]
+    ; c : 'a Hardcaml.With_valid.t [@bits 4]
+    }
+  [@@deriving hardcaml]
+
+  let%expect_test "With_valid.t in interface" =
+    print_t_list (to_list port_names_and_widths);
+    [%expect
+      {|
+      a 4
+      b$valid 1
+      b$value 1
+      c$valid 1
+      c$value 4
+      |}]
+  ;;
+end
+
 module%test Options = struct
   module N = struct
     type 'a t = { n : 'a } [@@deriving hardcaml]

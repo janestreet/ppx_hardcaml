@@ -28,7 +28,7 @@ module%test Top_level_functions = struct
     [%expect {| ("Signal.names result0" (my_function$result)) |}];
     let result1 = my_function 10 scope 20 in
     (* Since the my_function subscope was already created, the next result gets a
-       my_function_1 subscope.*)
+       my_function_1 subscope. *)
     print_s [%message (Signal.names result1 : string list)];
     [%expect {| ("Signal.names result1" (my_function_1$result)) |}]
   ;;

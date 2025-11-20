@@ -622,8 +622,8 @@ let%expect_test "ast" =
 ;;
 
 (* This type signatures below demonstrates the PPX is more relaxed in mlis. Namely, even
-   though the PPX cannot generate definitions for the below record fields, they are
-   still allowed in the mli.
+   though the PPX cannot generate definitions for the below record fields, they are still
+   allowed in the mli.
 *)
 module type Allow_nested_in_sig = sig
   type 'a t =

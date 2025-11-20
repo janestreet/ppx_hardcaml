@@ -7,8 +7,8 @@ let%expect_test "Is hardcaml linked?" =
 
 let iarray_of_list = Iarray.of_list
 
-(* The naming PPX explicitly refers to Hardcaml in its expansion. Provide stubs for
-       the functions and types it uses. *)
+(* The naming PPX explicitly refers to Hardcaml in its expansion. Provide stubs for the
+   functions and types it uses. *)
 module Hardcaml = struct
   module Signal = struct
     type t = Dummy_signal [@@deriving sexp]

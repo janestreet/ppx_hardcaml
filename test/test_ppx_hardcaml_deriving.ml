@@ -195,12 +195,12 @@ module%test Arrays = struct
     print_t_list (to_list port_names_and_widths);
     [%expect
       {|
-      x0 1
-      y0 5
-      y1 5
-      y2 5
-      Z0 1
-      Z1 1
+      x_0 1
+      y_0 5
+      y_1 5
+      y_2 5
+      Z_0 1
+      Z_1 1
       |}]
   ;;
 end
@@ -214,7 +214,7 @@ module%test Array_with_module = struct
 
   let%expect_test _ =
     print_t_list (to_list port_names_and_widths);
-    [%expect {| foo0 1 |}]
+    [%expect {| foo_0 1 |}]
   ;;
 end
 
@@ -230,12 +230,12 @@ module%test Iarrays = struct
     print_t_list (to_list port_names_and_widths);
     [%expect
       {|
-      x0 1
-      y0 5
-      y1 5
-      y2 5
-      Z0 1
-      Z1 1
+      x_0 1
+      y_0 5
+      y_1 5
+      y_2 5
+      Z_0 1
+      Z_1 1
       |}]
   ;;
 end
@@ -249,7 +249,7 @@ module%test Iarray_with_module = struct
 
   let%expect_test _ =
     print_t_list (to_list port_names_and_widths);
-    [%expect {| foo0 1 |}]
+    [%expect {| foo_0 1 |}]
   ;;
 end
 
@@ -265,12 +265,12 @@ module%test Lists = struct
     print_t_list (to_list port_names_and_widths);
     [%expect
       {|
-      x0 1
-      y0 5
-      y1 5
-      y2 5
-      Z0 1
-      Z1 1
+      x_0 1
+      y_0 5
+      y_1 5
+      y_2 5
+      Z_0 1
+      Z_1 1
       |}]
   ;;
 end
@@ -284,7 +284,7 @@ module%test List_with_module = struct
 
   let%expect_test _ =
     print_t_list (to_list port_names_and_widths);
-    [%expect {| foo0 1 |}]
+    [%expect {| foo_0 1 |}]
   ;;
 end
 
@@ -419,7 +419,7 @@ module _ = struct
       ; optional_scalar : 'a option [@bits 12] [@exists A.exists] [@rtlname "os"]
       ; optional_array_of_scalar : 'a array option
            [@bits 12] [@length 2] [@exists A.exists] [@rtlname "oas$"]
-      ; optional_iarray_of_scalar : 'a array option
+      ; optional_iarray_of_scalar : 'a iarray option
            [@bits 12] [@length 2] [@exists A.exists] [@rtlname "ois$"]
       ; optional_module : 'a M.t option [@exists A.exists] [@rtlprefix "om$"]
       ; optional_list_of_modules : 'a M.t list option
@@ -462,35 +462,35 @@ module _ = struct
       {|
       Port names and widths:
         ((clock (clock 1)) (optional_scalar ((os 12)))
-         (optional_array_of_scalar (((oas$0 12) (oas$1 12))))
-         (optional_iarray_of_scalar (((ois$0 12) (ois$1 12))))
+         (optional_array_of_scalar (((oas$_0 12) (oas$_1 12))))
+         (optional_iarray_of_scalar (((ois$_0 12) (ois$_1 12))))
          (optional_module (((x (om$x 42)))))
-         (optional_list_of_modules ((((x (olm$x0 42))) ((x (olm$x1 42)))))))
+         (optional_list_of_modules ((((x (olm$x_0 42))) ((x (olm$x_1 42)))))))
 
       to_list
-        (clock os oas$0 oas$1 ois$0 ois$1 om$x olm$x0 olm$x1)
+        (clock os oas$_0 oas$_1 ois$_0 ois$_1 om$x olm$x_0 olm$x_1)
 
       iter
         - clock
         - os
-        - oas$0
-        - oas$1
-        - ois$0
-        - ois$1
+        - oas$_0
+        - oas$_1
+        - ois$_0
+        - ois$_1
         - om$x
-        - olm$x0
-        - olm$x1
+        - olm$x_0
+        - olm$x_1
 
       iter2
         - clock: 1
         - os: 12
-        - oas$0: 12
-        - oas$1: 12
-        - ois$0: 12
-        - ois$1: 12
+        - oas$_0: 12
+        - oas$_1: 12
+        - ois$_0: 12
+        - ois$_1: 12
         - om$x: 42
-        - olm$x0: 42
-        - olm$x1: 42
+        - olm$x_0: 42
+        - olm$x_1: 42
       |}];
     B.test ();
     [%expect
@@ -653,7 +653,7 @@ let%expect_test "rtlmangle with a non default seperator" =
 
 (* [derive_from_map2] builds the interface from just the map2 function. Trades compilation
    time for runtime performance. *)
-module _ : sig
+module%test Derive_from_map2 : sig
   type 'a t =
     { a : 'a
     ; b : 'a
@@ -710,6 +710,27 @@ end = struct
       {|
       a 5
       b 9
+      |}]
+  ;;
+end
+
+module%test TwoD_array = struct
+  module Inner = struct
+    type 'a t = { a : 'a array [@length 2] } [@@deriving hardcaml]
+  end
+
+  module Outer = struct
+    type 'a t = { a : 'a Inner.t array [@length 2] } [@@deriving hardcaml]
+  end
+
+  let%expect_test "names" =
+    print_s [%message (Outer.port_names : string Outer.t)];
+    [%expect
+      {|
+      (Outer.port_names ((
+        a (
+          ((a (a$a_0_0 a$a_1_0)))
+          ((a (a$a_0_1 a$a_1_1)))))))
       |}]
   ;;
 end

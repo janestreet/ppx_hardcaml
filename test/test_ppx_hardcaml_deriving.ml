@@ -734,3 +734,7 @@ module%test TwoD_array = struct
       |}]
   ;;
 end
+
+(* Ensure the [pre] generated interfaces can construct a full interface *)
+module _ = Hardcaml.Interface.Make (Ppx_hardcaml0_test.Test.Explicit)
+module _ = Hardcaml.Interface.Make (Ppx_hardcaml0_test.Test.Implicit)

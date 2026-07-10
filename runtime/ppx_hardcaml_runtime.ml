@@ -1,7 +1,7 @@
 open Base
 include Ppx_hardcaml_runtime0
-module Interface = Hardcaml.Interface
-module Wave_format = Hardcaml.Wave_format
+module Interface = Hardcaml_kernel.Interface
+module Wave_format = Hardcaml_kernel.Wave_format
 
 module Derive_interface_from_map2 (X : sig
     type 'a t [@@deriving equal ~localize, compare ~localize]

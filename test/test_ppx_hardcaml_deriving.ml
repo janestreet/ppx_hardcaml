@@ -362,6 +362,39 @@ module%test With_valid_in_interface = struct
   ;;
 end
 
+module%test Clocking_in_interface = struct
+  module Generic_clocking = struct
+    type 'a t =
+      { clock : 'a
+      ; reset_n : 'a
+      }
+    [@@deriving hardcaml]
+  end
+
+  type 'a t =
+    { clocking : 'a Hardcaml.Clocking.t
+    ; foo_clocking : 'a Hardcaml.Clocking.t
+    ; prefixed_clocking : 'a Hardcaml.Clocking.t [@rtlprefix "prefix$"]
+    ; bar_clocking : 'a Generic_clocking.t
+    }
+  [@@deriving hardcaml]
+
+  let%expect_test "Clocking.t in interface" =
+    print_t_list (to_list port_names_and_widths);
+    [%expect
+      {|
+      clock 1
+      clear 1
+      foo_clock 1
+      foo_clear 1
+      prefix$clock 1
+      prefix$clear 1
+      bar_clock 1
+      bar_reset_n 1
+      |}]
+  ;;
+end
+
 module%test Options = struct
   module N = struct
     type 'a t = { n : 'a } [@@deriving hardcaml]

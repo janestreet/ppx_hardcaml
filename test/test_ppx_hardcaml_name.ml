@@ -189,6 +189,36 @@ let%expect_test "naming an iarray of signals" =
     |}]
 ;;
 
+let%expect_test "naming an option of signals" =
+  let scope = Hardcaml.Scope.Dummy_scope in
+  let%hw_option mysome = Some Hardcaml.Signal.Dummy_signal in
+  let%hw_option mynone = None in
+  let%hw_option.Test_type myrecord = Some { Test_type.test_signal = Dummy_signal } in
+  let%hw_option.Test_type myrecord_none = None in
+  let%hw_var_option myvar = Some { Hardcaml.Always.Variable.value = Dummy_signal } in
+  let%hw_var_option myvar_none = None in
+  (* Check variables are accessible after renaming *)
+  ignore (mysome : Hardcaml.Signal.t option);
+  ignore (mynone : Hardcaml.Signal.t option);
+  ignore (myrecord : Test_type.t option);
+  ignore (myrecord_none : Test_type.t option);
+  ignore (myvar : Hardcaml.Always.Variable.t option);
+  ignore (myvar_none : Hardcaml.Always.Variable.t option);
+  ();
+  [%expect
+    {|
+    ("Hardcaml.Scope.name called" (scope Dummy_scope) (name_for_signal mysome))
+    ("Signal.__ppx_auto_name called" (prefix mysome)
+     (thing_to_name Dummy_signal))
+    ("Hardcaml.Scope.name called" (scope Dummy_scope) (name_for_signal myrecord))
+    ("Test_type.__ppx_auto_name called" (prefix myrecord)
+     (thing_to_name ((test_signal Dummy_signal))))
+    ("Hardcaml.Scope.name called" (scope Dummy_scope) (name_for_signal myvar))
+    ("Variable.__ppx_auto_name called" (prefix myvar)
+     (thing_to_name ((value Dummy_signal))))
+    |}]
+;;
+
 let%expect_test "naming a list/array of always variables" =
   let scope = Hardcaml.Scope.Dummy_scope in
   let%hw_var_list mylist = [ { value = Dummy_signal }; { value = Dummy_signal } ] in
